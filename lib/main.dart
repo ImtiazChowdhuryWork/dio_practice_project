@@ -1,6 +1,7 @@
 import 'package:dio_practice_project/bindings/controllers_binding.dart';
 import 'package:dio_practice_project/helper/di.dart';
 import 'package:dio_practice_project/helper/helper_methods.dart';
+import 'package:dio_practice_project/helper/register_provider.dart';
 import 'package:dio_practice_project/loading_screen.dart';
 import 'package:dio_practice_project/localization/presentation/language_preference.dart';
 import 'package:dio_practice_project/localization/presentation/languages.dart';
@@ -10,6 +11,7 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:provider/provider.dart';
 
 import 'routes/routes.dart';
 
@@ -29,11 +31,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     rotation();
     setInitValue();
-    return LayoutBuilder(
-      builder: (context, constraints){
-        return const UtilScreenMobile();
-      },
-      );
+    return MultiProvider(
+      providers: providers,
+      child: LayoutBuilder(
+        builder: (context, constraints){
+          return const UtilScreenMobile();
+        },
+        ),
+    );
   }
 }
 

@@ -1,5 +1,5 @@
 import 'dart:developer';
-import 'package:dio_practice_project/Screens/Home/presentation/home_screen.dart';
+import 'package:dio_practice_project/features/Home/presentation/home_screen.dart';
 import 'package:dio_practice_project/constants/app_constants.dart';
 import 'package:dio_practice_project/helper/post_login.dart';
 import 'package:dio_practice_project/routes/routes.dart';
