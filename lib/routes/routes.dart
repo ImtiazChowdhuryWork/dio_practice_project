@@ -1,11 +1,12 @@
 import 'dart:io';
 
 
-import 'package:dio_practice_project/Screens/Home/presentation/home_screen.dart';
+import 'package:dio_practice_project/features/Home/presentation/home_screen.dart';
+import 'package:dio_practice_project/features/counter_application_with_provider/presentation/counter_application_with_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../Screens/welcome_screen/presentation/welcome_screen.dart';
+import '../features/welcome_screen/presentation/welcome_screen.dart';
 
 
 class Routes {
@@ -15,6 +16,7 @@ class Routes {
   static const String welcomeScreen = '/';
   static const String onboardingScreen = '/onboarding_screen';
   static const String homeScreen = '/home_screen';
+  static const String counterApplicationWithProvider = '/counter_application_with_provider';
   
 
   static final appRoutes = [
@@ -32,6 +34,15 @@ class Routes {
     GetPage(
       name: homeScreen,
       page: () => HomeScreen(),
+      transition: _transition(),
+      customTransition: _customTransition(),
+      transitionDuration: _duration(),
+    ),
+
+    ///Counter Application With Provider
+    GetPage(
+      name: counterApplicationWithProvider,
+      page: () => CounterApplicationWithProvider(),
       transition: _transition(),
       customTransition: _customTransition(),
       transitionDuration: _duration(),
