@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<colors>
+
+<color name="scaffoldBackgroundColor">#FF111111</color>
+<color name="cFFFFFF">#FFFFFFFF</color>
+<color name="c000000">#FF000000</color>
+<color name="cF4F4F4">#FFF4F4F4</color>
+<color name="c778beb">#FF778beb</color>
+<color name="c38686A">#FF38686A</color>
+<color name="cd9d9d9">#FFd9d9d9</color>
+<color name="c8c8c8c">#FF8c8c8c</color>
+<color name="c292E34">#FF292E34</color>
+<color name="ce7e5df">#FFe7e5df</color>
+<color name="cb4b4b4">#FFb4b4b4</color>
+<color name="c4d4d4d">#FF4d4d4d</color>
+<color name="c989898">#FF989898</color>
+<color name="cde0000">#FFde0000</color>
+<color name="c999999">#FF999999</color>
+<color name="cb20000">#FFb20000</color>
+<color name="cc6c6c6">#FFc6c6c6</color>
+<color name="cfefefe">#FFfefefe</color>
+<color name="cd7d7d7">#FFd7d7d7</color>
+<color name="c363636">#FF363636</color>
+<color name="c3c3c3c">#FF3c3c3c</color>
+<color name="c111111">#FF111111</color>
+<color name="c6a6a6a">#FF6a6a6a</color>
+<color name="c343434">#FF343434</color>
+<color name="c2f772f">#FF2f772f</color>
+<color name="ce7b0b0">#FFe7b0b0</color>
+<color name="c262626">#FF262626</color>
+<color name="c727272">#FF727272</color>
+<color name="c7e0101">#FF7e0101</color>
+<color name="c0e0e0e">#FF0e0e0e</color>
+<color name="c220e0e">#FF220e0e</color>
+<color name="c282828">#FF282828</color>
+<color name="c909090">#FF909090</color>
+<color name="c272727">#FF272727</color>
+<color name="c299105">#FF299105</color>
+<color name="c191919">#FF191919</color>
+<color name="c620000">#FF620000</color>
+<color name="c4e000b">#FF4e000b</color>
+<color name="cF0F0F0">#FFF0F0F0</color>
+<color name="c949494">#FF949494</color>
+<color name="ceff1f5">#FFeff1f5</color>
+
+
+</colors>
