@@ -1,5 +1,9 @@
+import 'package:dio_practice_project/core/styles/text_styles.dart';
+import 'package:dio_practice_project/core/utils/ui_helpers.dart';
 import 'package:dio_practice_project/features/sign_up/presentation/controllers/sign_up_controller.dart';
+import 'package:dio_practice_project/shared/widgets/custom_elevated_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 class SignUpPage extends GetView<SignUpController> {
@@ -9,20 +13,23 @@ class SignUpPage extends GetView<SignUpController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FA),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
-          onPressed: () => Get.back(),
-        ),
-      ),
+
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+          padding: EdgeInsets.all(UIHelper.kDefaulutPadding()),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
+                  onPressed: () => Get.back(),
+                ),
+              ),
+              UIHelper.verticalSpace(30.h),
+
+              ///Logo
               Center(
                 child: Container(
                   height: 80,
@@ -38,46 +45,54 @@ class SignUpPage extends GetView<SignUpController> {
                   ),
                 ),
               ),
+              UIHelper.verticalSpace(30.h),
 
-              const SizedBox(height: 30),
-
-              const Text(
+              /// Ttitle
+              Text(
                 'Create Account',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextFontStyle.headline28w500c000000StylePoppins,
               ),
 
-              const SizedBox(height: 6),
+              UIHelper.verticalSpace(6.h),
 
-              const Text(
+              /// Sub-Title
+              Text(
                 'Sign up to get started',
-                style: TextStyle(fontSize: 15, color: Colors.grey),
+                style: TextFontStyle.headline15w500c989898StylePoppins,
               ),
 
-              const SizedBox(height: 30),
+              UIHelper.verticalSpace(30.h),
 
+              /// Label : Name
               _buildLabel('Full Name'),
-              const SizedBox(height: 8),
+              UIHelper.verticalSpace(8.h),
+
+              ///Field : Name
               _buildTextField(
                 controller: controller.nameController,
                 hint: 'Enter your full name',
                 prefixIcon: Icons.person_outline,
               ),
+              UIHelper.verticalSpace(20.h),
 
-              const SizedBox(height: 20),
-
+              ///Label : Email
               _buildLabel('Email'),
-              const SizedBox(height: 8),
+              UIHelper.verticalSpace(8.h),
+
+              ///Field : Email
               _buildTextField(
                 controller: controller.emailController,
                 hint: 'Enter your email',
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
               ),
+              UIHelper.verticalSpace(20.h),
 
-              const SizedBox(height: 20),
-
+              ///Label : Password
               _buildLabel('Password'),
-              const SizedBox(height: 8),
+              UIHelper.verticalSpace(8.h),
+
+              ///Field : password
               Obx(
                 () => _buildTextField(
                   controller: controller.passwordController,
@@ -95,10 +110,13 @@ class SignUpPage extends GetView<SignUpController> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              UIHelper.verticalSpace(20.h),
 
+              ///Label : Confirm Password
               _buildLabel('Confirm Password'),
-              const SizedBox(height: 8),
+              UIHelper.verticalSpace(8.h),
+
+              ///Field : Confirm Password
               Obx(
                 () => _buildTextField(
                   controller: controller.confirmPasswordController,
@@ -116,66 +134,40 @@ class SignUpPage extends GetView<SignUpController> {
                 ),
               ),
 
-              const SizedBox(height: 32),
+              UIHelper.verticalSpace(32.h),
 
+              /// Sign up button
               Obx(
-                () => SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed:
-                        controller.isLoading.value ? null : controller.signUp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      disabledBackgroundColor: Colors.teal.withValues(alpha: 0.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: controller.isLoading.value
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : const Text(
-                            'Sign Up',
-                            style: TextStyle(
-                              fontSize: 17,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
+                () => CustomElevatedButton(
+                  buttonColor: Colors.teal,
+                  isLoading: controller.isLoading.value,
+                  isDisabled: controller.isLoading.value,
+                  buttonTitle: 'Sign Up',
+                  onTap: controller.signUp,
                 ),
               ),
 
-              const SizedBox(height: 20),
+              UIHelper.verticalSpace(20.h),
 
+              //// Already have an account -> sign in
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Already have an account? ',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextFontStyle.headline15w500c989898StylePoppins,
                   ),
                   GestureDetector(
                     onTap: () => Get.back(),
-                    child: const Text(
+                    child: Text(
                       'Sign In',
-                      style: TextStyle(
-                        color: Colors.teal,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextFontStyle.headline15w500TealStylePoppins,
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              UIHelper.verticalSpace(20.h),
             ],
           ),
         ),
