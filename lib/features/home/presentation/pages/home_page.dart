@@ -3,6 +3,7 @@ import 'package:dio_practice_project/features/home/presentation/controllers/home
 import 'package:dio_practice_project/features/home/presentation/widgets/practice_card_widget.dart';
 import 'package:dio_practice_project/shared/constants/app_list.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 class HomePage extends GetView<HomeController> {
@@ -23,10 +24,11 @@ class HomePage extends GetView<HomeController> {
         padding: EdgeInsets.all(UIHelper.kDefaulutPadding()),
         child: Column(
           children: [
-            ListView.builder(
+            ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: AppList.learningList.length,
+              separatorBuilder: (context,index) => UIHelper.verticalSpace(10.h),
               itemBuilder: (context, index) {
                 final data = AppList.learningList[index];
                 return PracticeCardWidget(

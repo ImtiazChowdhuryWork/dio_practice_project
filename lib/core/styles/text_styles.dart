@@ -68,6 +68,20 @@ class TextFontStyle {
     fontSize: 14.sp,
     fontWeight: FontWeight.w500,
   );
+  static final headline15w500c989898StylePoppins = TextStyle(
+    fontFamily: 'Poppins',
+    fontFamilyFallback: const ['Montserrat', 'Poppins'],
+    color: AppColors.c989898,
+    fontSize: 15.sp,
+    fontWeight: FontWeight.w500,
+  );
+  static final headline15w500TealStylePoppins = TextStyle(
+    fontFamily: 'Poppins',
+    fontFamilyFallback: const ['Montserrat', 'Poppins'],
+    color: Colors.teal,
+    fontSize: 15.sp,
+    fontWeight: FontWeight.w500,
+  );
   static final headline14w500c363636StylePoppins = TextStyle(
     fontFamily: 'Poppins',
     fontFamilyFallback: const ['Montserrat', 'Poppins'],
@@ -256,6 +270,13 @@ class TextFontStyle {
     color: AppColors.cfefefe,
     fontSize: 24.sp,
     fontWeight: FontWeight.w700,
+  );
+  static final headline28w500c000000StylePoppins = TextStyle(
+    fontFamily: 'Poppins',
+    fontFamilyFallback: const ['Montserrat', 'Poppins'],
+    color: AppColors.c000000,
+    fontSize: 28.sp,
+    fontWeight: FontWeight.w500,
   );
   static final headline8w700cfefefeStylePoppins = TextStyle(
     fontFamily: 'Poppins',
