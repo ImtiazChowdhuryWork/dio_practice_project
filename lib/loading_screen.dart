@@ -1,14 +1,13 @@
 import 'dart:developer';
-import 'package:dio_practice_project/features/Home/presentation/home_screen.dart';
-import 'package:dio_practice_project/constants/app_constants.dart';
-import 'package:dio_practice_project/helper/post_login.dart';
+
+import 'package:dio_practice_project/core/constants/app_constants.dart';
+import 'package:dio_practice_project/core/di/injection_container.dart';
+import 'package:dio_practice_project/core/utils/helper_methods.dart';
+import 'package:dio_practice_project/core/utils/post_login.dart';
+import 'package:dio_practice_project/features/home/presentation/pages/home_page.dart';
 import 'package:dio_practice_project/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-import 'helper/di.dart';
-import 'helper/logger_util.dart';
-import 'helper/helper_methods.dart';
 
 final class Loading extends StatefulWidget {
   const Loading({super.key});
@@ -27,8 +26,9 @@ class _LoadingState extends State<Loading> {
   }
 
   Future<void> _initializeApp() async {
-    // Initialize default values first
-    await setInitValue();
+    initDefaultStorageValues();
+    await initDeviceId();
+    await Future.delayed(const Duration(seconds: 2));
 
     final bool isLoggedIn = appData.read(kKeyAccessToken) != null;
     final bool isFirstTime = appData.read(kKeyfirstTime) ?? false;
@@ -38,22 +38,9 @@ class _LoadingState extends State<Loading> {
 
     if (isLoggedIn) {
       await performPostLoginActions();
-
-      // Navigate via GetX so bindings are applied
-      Get.offAllNamed(Routes.homeScreen); // Make sure this route is in GetMaterialApp
+      Get.offAllNamed(Routes.home);
     } else {
-      // Not logged in
-      // if (!Get.isRegistered<NetworkCaller>()) Get.put(NetworkCaller());
-
-      // if (!Get.isRegistered<SignInRepository>()) Get.put(SignInRepository(Get.find()));
-
-      // if (!Get.isRegistered<SignInScreenController>()) {
-      //   Get.put(SignInScreenController(Get.find()));
-      // }
-
-      final Widget startScreen = isFirstTime ? HomeScreen() : HomeScreen();
-      // Navigate via GetX
-      Get.offAll(() => startScreen);
+      Get.offAll(() => const HomePage());
     }
 
     setState(() => _isLoading = false);
@@ -61,7 +48,6 @@ class _LoadingState extends State<Loading> {
 
   @override
   Widget build(BuildContext context) {
-    // Show a loading/welcome screen until navigation is done
-    return _isLoading ? const HomeScreen() : const SizedBox.shrink();
+    return _isLoading ? const HomePage() : const SizedBox.shrink();
   }
 }
