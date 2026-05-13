@@ -1,360 +1,408 @@
-# Dio Practice Project
+# Clean Architecture in Flutter — A Deep Explanation
 
-A Flutter practice project built with **Clean Architecture**, **GetX**, **Dio**, and **GetIt**.
-This README explains how the entire app works — from scratch, like you've never coded before.
+> This is a Flutter practice project. But more importantly, it is a **thinking exercise** about how to write code that stays clean, even as the app grows.
 
 ---
 
 ## Table of Contents
 
-1. [What is this app?](#1-what-is-this-app)
-2. [How does a Flutter app even work?](#2-how-does-a-flutter-app-even-work)
-3. [What is Clean Architecture and WHY does it exist?](#3-what-is-clean-architecture-and-why-does-it-exist)
-4. [The three layers explained simply](#4-the-three-layers-explained-simply)
-5. [Sign Up flow — step by step](#5-sign-up-flow--step-by-step)
-6. [What is Dio?](#6-what-is-dio)
-7. [What is GetX?](#7-what-is-getx)
-8. [What is GetIt (Dependency Injection)?](#8-what-is-getit-dependency-injection)
-9. [What is GetStorage?](#9-what-is-getstorage)
-10. [The complete picture](#10-the-complete-picture)
-11. [Project folder structure](#11-project-folder-structure)
-12. [API Reference](#12-api-reference)
-13. [Quick concept summary](#13-quick-concept-summary)
+1. [The Core Idea — One Sentence](#1-the-core-idea--one-sentence)
+2. [What is Clean Architecture?](#2-what-is-clean-architecture)
+3. [Why does Clean Architecture exist?](#3-why-does-clean-architecture-exist)
+4. [The Three Layers — What each one is responsible for](#4-the-three-layers--what-each-one-is-responsible-for)
+5. [What is an Entity?](#5-what-is-an-entity)
+6. [What is a Repository?](#6-what-is-a-repository)
+7. [What is a UseCase?](#7-what-is-a-usecase)
+8. [What is a Model?](#8-what-is-a-model)
+9. [What is a DataSource?](#9-what-is-a-datasource)
+10. [What is a Controller?](#10-what-is-a-controller)
+11. [What is Dependency Injection?](#11-what-is-dependency-injection)
+12. [The Full Sign Up Flow — seeing it all together](#12-the-full-sign-up-flow--seeing-it-all-together)
+13. [What is Dio?](#13-what-is-dio)
+14. [What is GetX?](#14-what-is-getx)
+15. [Project Folder Structure](#15-project-folder-structure)
+16. [Quick Concept Summary](#16-quick-concept-summary)
 
 ---
 
-## 1. What is this app?
+## 1. The Core Idea — One Sentence
 
-Think of this app like a **shop assistant app** for an online store. Right now it can:
+> **The part of your code that talks to the server should never directly talk to the part that draws the screen.**
 
-- Show you a home screen with a list of practice features
-- Let you tap **"Sign Up"** to create an account
-- Send your name, email, and password to a **server** running on this Mac
-- Get back a "key" (called a **token**) that proves you're logged in
-
-That's it for now. But the *way* it's built is what matters — it follows a pattern called **Clean Architecture**.
+That's it. Everything else in clean architecture is just a consequence of this one idea.
 
 ---
 
-## 2. How does a Flutter app even work?
+## 2. What is Clean Architecture?
 
-Imagine your phone screen is a **whiteboard**. Flutter is the person who draws on it.
+**What:** Clean Architecture is a way of organizing your code into **separate layers**, where each layer has **one job** and never mixes with the others.
 
-Every screen you see is made of **widgets**. A widget is just a fancy word for *"a piece of the screen."*
+Think of it like a **hospital**.
 
-- A button → widget
-- A text field → widget
-- The whole screen → widget
-- Even empty space → widget
+- The **receptionist** talks to the patient. She does not perform surgery.
+- The **doctor** decides the diagnosis. He does not clean the wards.
+- The **nurse** gives the medicine. She does not handle billing.
+- The **accountant** handles billing. He does not treat patients.
 
-They are like **LEGO blocks** — you stack them together to build the UI.
+Each person has a role. They communicate through defined channels. If the billing system changes, the doctor does not need to change how he treats patients.
+
+Your app works the same way:
 
 ```
-Screen
-└── Column
-    ├── Text("Create Account")
-    ├── TextField (email)
-    ├── TextField (password)
-    └── Button("Sign Up")
+┌────────────────────────────────────────────┐
+│         PRESENTATION LAYER                 │
+│   (What the user sees and touches)         │
+│   Pages, Controllers, Widgets              │
+├────────────────────────────────────────────┤
+│         DOMAIN LAYER                       │
+│   (The brain — the business rules)         │
+│   Entities, UseCases, Repository contracts │
+├────────────────────────────────────────────┤
+│         DATA LAYER                         │
+│   (The hands — does the actual work)       │
+│   DataSources, Models, Repository impls    │
+└────────────────────────────────────────────┘
 ```
 
-When something changes (like you type your name), Flutter **erases and redraws** only the part that changed. That's how it stays fast.
+Each layer only communicates with the layer **directly below** it. The UI talks to Domain. Domain talks to Data. The UI never talks to Data directly. **Never.**
 
 ---
 
-## 3. What is Clean Architecture and WHY does it exist?
+## 3. Why does Clean Architecture exist?
 
-Imagine you're building a house. You could dump all your furniture, pipes, wires, and walls in one pile — it would *technically* work, but fixing anything would be a nightmare.
+**Why:** Because without structure, code becomes a tangled mess. And tangled code is dangerous.
 
-**Clean architecture is like having separate rooms for separate things.**
+Imagine you write your whole app without layers. The button tap directly calls Dio, directly parses JSON, directly updates the UI. It "works." But then:
 
-```
-┌─────────────────────────────────────────┐
-│           PRESENTATION LAYER            │  ← What the user sees & touches
-│     (Pages, Controllers, Widgets)       │
-├─────────────────────────────────────────┤
-│             DOMAIN LAYER                │  ← The business rules (the "brain")
-│      (Entities, UseCases, Repos)        │
-├─────────────────────────────────────────┤
-│              DATA LAYER                 │  ← Where data actually comes from
-│    (Models, DataSources, RepoImpls)     │
-└─────────────────────────────────────────┘
-         data flows downward only
-         never upward
-```
+- You want to replace Dio with a different HTTP library. Now you have to touch 15 screens.
+- You want to write tests. But the UI and the network are glued together, so you can't test one without the other.
+- A new developer joins the team. They open the file and see: network call, UI logic, JSON parsing, navigation — all in one function. They have no idea where to start.
 
-**The golden rule:** Each layer only talks to the layer directly below it. The UI never touches the internet directly. Ever.
+**The philosophical reason:**
 
-**Why does this matter?**
+Everything in nature that lasts a long time is **separated into layers** with clear boundaries.
 
-If tomorrow you swap your server for a different one, you only change the **data layer** — the UI and business logic don't even know something changed. Each layer has exactly one job, and nothing else.
+- Your phone has: hardware → operating system → apps. Each layer knows its own job.
+- A book has: chapters → paragraphs → sentences. Breaking one sentence does not destroy the chapter.
+- Your body has: organs → tissues → cells. Your kidneys do not do the work of your lungs.
+
+Code is no different. **Separation of concerns is not a trend. It is how complex things survive.**
 
 ---
 
-## 4. The three layers explained simply
+## 4. The Three Layers — What each one is responsible for
 
-### Layer 1 — Presentation (the "face")
+### Layer 1: Presentation (The Face)
 
-This is everything the user sees and interacts with.
+**What it does:** Shows data to the user. Reacts to user taps. Shows loading spinners. Navigates between screens.
 
-| File | Role |
-|---|---|
-| `sign_up_page.dart` | The actual screen with text fields and a button |
-| `sign_up_controller.dart` | The brain behind the page — holds state, reacts to taps |
-| `sign_up_binding.dart` | The factory that creates the controller when the screen opens |
+**What it does NOT do:** Talk to the internet. Parse JSON. Write to disk.
 
-> **Analogy:** Think of a restaurant.
-> - The **page** is the table where you sit
-> - The **controller** is the waiter who takes your order and brings your food
-> - The waiter never cooks — they just relay orders to the kitchen
+Files in this project:
+- `sign_up_page.dart` — the actual screen
+- `sign_up_controller.dart` — the logic behind the screen
+- `sign_up_binding.dart` — creates the controller when the screen opens
 
----
+### Layer 2: Domain (The Brain)
 
-### Layer 2 — Domain (the "brain")
+**What it does:** Defines the rules of the app. What a "user" looks like. What "sign up" means. What data is needed.
 
-This layer has **no idea** whether data comes from the internet, a database, or thin air. It only knows *what* it needs, not *how* to get it.
+**What it does NOT do:** Know where the data comes from. Know anything about HTTP or JSON.
 
-| File | Role |
-|---|---|
-| `auth_response_entity.dart` | A pure Dart object. Describes what a "successful signup" looks like |
-| `sign_up_repository.dart` | A **contract** (abstract class). Says: *"whoever implements me must provide a `signUp()` function"* |
-| `sign_up_usecase.dart` | One specific action the app can perform: `execute(name, email, password)` |
+This layer is **pure Dart**. No Flutter. No Dio. No HTTP. Just plain Dart classes and functions.
 
-> **Analogy:**
-> - The **entity** is the dish description ("Pasta: has noodles, sauce, cheese")
-> - The **repository contract** is the menu that promises "we will deliver pasta"
-> - The **use case** is the order slip the waiter hands to the kitchen
+Files in this project:
+- `auth_response_entity.dart` — what a successful signup result looks like
+- `sign_up_repository.dart` — a contract: "whoever implements me must be able to sign up"
+- `sign_up_usecase.dart` — the action of signing up
 
----
+### Layer 3: Data (The Hands)
 
-### Layer 3 — Data (the "hands")
+**What it does:** Does the actual dirty work. Makes HTTP calls. Reads/writes to local storage. Parses JSON into objects.
 
-This layer does the actual work — making HTTP calls, parsing JSON, talking to databases.
+**What it does NOT do:** Know anything about the UI. Know anything about navigation.
 
-| File | Role |
-|---|---|
-| `auth_response_model.dart` | Like an entity, but knows how to read JSON from the server |
-| `sign_up_remote_datasource.dart` | The code that fires the actual HTTP request using Dio |
-| `sign_up_repository_impl.dart` | Fulfills the contract from the domain layer |
-
-> **Analogy:**
-> - The **datasource** is the chef who gets raw ingredients (HTTP response)
-> - The **model** is the recipe that turns raw ingredients into a dish
-> - The **repository impl** is the final plate handed back to the waiter
+Files in this project:
+- `sign_up_remote_datasource.dart` — fires the HTTP request using Dio
+- `auth_response_model.dart` — parses the JSON response into a Dart object
+- `sign_up_repository_impl.dart` — fulfills the contract defined in Domain
 
 ---
 
-## 5. Sign Up flow — step by step
+## 5. What is an Entity?
 
-Let's trace exactly what happens when you tap the **"Sign Up"** button:
+**What:** An entity is a **pure Dart object** that describes a concept in your app. Nothing more.
 
-```
-USER TAPS BUTTON
-      │
-      ▼
-[sign_up_page.dart]
-  Calls: controller.signUp()
-      │
-      ▼
-[sign_up_controller.dart]
-  1. Reads text from all 4 fields (name, email, password, confirm password)
-  2. Validates:
-       - Are all fields filled?
-       - Do both passwords match?
-       - Is password at least 6 characters?
-  3. Sets isLoading = true  →  button shows a spinner
-  4. Calls: _signUpUseCase.execute(name, email, password)
-      │
-      ▼
-[sign_up_usecase.dart]
-  Just calls: _repository.signUp(name, email, password)
-      │
-      ▼
-[sign_up_repository_impl.dart]
-  Just calls: _remoteDataSource.signUp(name, email, password)
-      │
-      ▼
-[sign_up_remote_datasource.dart]  ← THE INTERNET HAPPENS HERE
-  1. Uses Dio to fire an HTTP POST request to:
-       http://localhost:8080/api/v1/auth/register
-  2. Sends this JSON in the request body:
-       {
-         "name": "John",
-         "email": "john@example.com",
-         "password": "secret123"
-       }
-      │
-      │  (server receives it, hashes the password, saves to database)
-      │
-      ▼  server sends back:
-       {
-         "success": true,
-         "data": {
-           "access_token": "eyJhbGci...",
-           "refresh_token": "eyJhbGci...",
-           "user": {
-             "id": "some-uuid",
-             "email": "john@example.com",
-             "name": "John",
-             "role": "customer"
-           }
-         }
-       }
-  3. Parses with ApiResponse.fromJson() — checks "success": true
-  4. Parses "data" with AuthResponseModel.fromJson()
-  5. Returns an AuthResponseModel (which IS an AuthResponseEntity)
-      │
-      ▼  bubbles back up: datasource → repositoryImpl → usecase → controller
-      │
-[sign_up_controller.dart] receives AuthResponseEntity
-  1. Saves access_token  to phone storage
-  2. Saves refresh_token to phone storage
-  3. Saves user name, email, id to phone storage
-  4. Sets isLoading = false
-  5. Navigates to the Home screen
-```
+**Why:** The domain layer needs to describe what things look like without being tied to how they are fetched or stored. An entity is the "idea" of a thing, independent of any technology.
 
-### What if something goes wrong?
-
-**Email already taken:**
-```json
-{ "success": false, "error": "email already registered" }
-```
-The datasource throws a `ServerException("email already registered")`.
-The controller catches it and shows a red snackbar at the bottom.
-
-**No internet / server is off:**
-Dio throws a `DioException`.
-The datasource catches it, throws a `ServerException("Sign up failed")`.
-The controller shows a snackbar.
-
-**Passwords don't match:**
-The controller catches this *before* even calling Dio.
-Shows a snackbar: *"Passwords do not match"*.
-
----
-
-## 6. What is Dio?
-
-Dio is a **Dart package** that handles talking to the internet. Think of it as a **courier service** for your app.
-
-You give Dio:
-- The **address** (URL): `http://localhost:8080/api/v1/auth/register`
-- The **method**: `POST` — means "I'm sending data, please process it"
-- The **package** (body): `{ name, email, password }`
-
-Dio delivers it and brings back whatever the server says.
-
-### HTTP methods — what do they mean?
-
-| Method | Meaning | Real-world analogy |
-|---|---|---|
-| `GET` | Fetch data, don't change anything | Reading a menu |
-| `POST` | Send new data to create something | Placing an order |
-| `PUT` | Replace existing data completely | Returning a dish and ordering a new one |
-| `PATCH` | Update part of existing data | Asking to add extra sauce |
-| `DELETE` | Remove something | Cancelling your order |
-
-### What is the `ApiInterceptor`?
-
-An interceptor is like a **customs officer** that checks every package going out and coming in.
-
-```
-Your App
-    │
-    ▼
-ApiInterceptor (checks outgoing)
-    │  - If you have a saved token, adds:
-    │    Authorization: Bearer eyJhbGci...
-    │  - Logs: "REQUEST[POST] => /auth/register"
-    ▼
-           INTERNET
-    ▼
-ApiInterceptor (checks incoming)
-    │  - Logs: "RESPONSE[201] => /auth/register"
-    │  - On error: logs the error details
-    ▼
-Your App gets the response
-```
-
-You write the token-adding logic **once** — every Dio request automatically gets it.
-
-### What is a token?
-
-When you log in or sign up, the server gives you a special string called a **JWT token** (it looks like `eyJhbGci...`). It's like a **wristband at a concert** — you show it to prove you already paid to get in.
-
-You send this token with every future request. The server checks it and knows who you are without you having to log in again every time.
-
----
-
-## 7. What is GetX?
-
-GetX is a package that handles three things in this app:
-
-### (a) State Management — making the UI react to changes
+**Example from this project:**
 
 ```dart
-final isLoading = false.obs;   // .obs means "watch this value"
+// lib/features/sign_up/domain/entities/auth_response_entity.dart
+
+class SignedUpUser {
+  final String id;
+  final String email;
+  final String name;
+  final String role;
+}
+
+class AuthResponseEntity {
+  final String accessToken;
+  final String refreshToken;
+  final SignedUpUser user;
+}
 ```
 
-`.obs` wraps the value in a special box. When you change it:
+Notice what is missing:
+- No `fromJson()` method → it doesn't know about JSON
+- No `import 'package:dio/dio.dart'` → it doesn't know about HTTP
+- No Flutter widgets → it doesn't know about the UI
 
-```dart
-isLoading.value = true;
-```
-
-...every `Obx(() => ...)` widget that reads `isLoading.value` **automatically redraws itself**. You don't manually tell the UI to update — it just reacts.
-
-```dart
-// In sign_up_page.dart
-Obx(() => ElevatedButton(
-  onPressed: controller.isLoading.value ? null : controller.signUp,
-  child: controller.isLoading.value
-      ? CircularProgressIndicator()   // shows spinner when loading
-      : Text('Sign Up'),              // shows text when not loading
-))
-```
-
-### (b) Navigation — moving between screens
-
-```dart
-Get.toNamed(Routes.signUp);       // Go to sign up page
-Get.back();                       // Go back to previous screen
-Get.offAllNamed(Routes.home);     // Go to home and clear all history
-```
-
-### (c) GetView — automatic controller wiring
-
-```dart
-class SignUpPage extends GetView<SignUpController> {
-```
-
-By extending `GetView<SignUpController>`, the page automatically gets a `controller` property. You never manually find or create the controller — GetX does it for you.
+It is **just a description**. Like a job description: "A user has an id, email, name, and role." It says nothing about where you hire them.
 
 ---
 
-## 8. What is GetIt (Dependency Injection)?
+## 6. What is a Repository?
 
-GetIt is like a **big storage cupboard** for objects that need to be shared across the app.
+**What:** A repository is a **contract** — a promise that says "I can do this, but I'm not telling you how."
 
-**The problem it solves:**
+**Why:** The domain layer needs to get data. But it should not care whether that data comes from the internet, a database, or a hardcoded list. The repository hides that detail behind a simple interface.
 
-`SignUpController` needs a `SignUpUseCase`.
-`SignUpUseCase` needs a `SignUpRepository`.
-`SignUpRepository` needs a `SignUpRemoteDataSource`.
-`SignUpRemoteDataSource` needs a `Dio` instance.
+Think of it like ordering food at a restaurant. You tell the waiter: "I want pasta." You do not go into the kitchen to cook it yourself. The waiter is the contract. The kitchen is the implementation.
 
-Without GetIt, you'd have to manually create and pass all of these everywhere. That gets messy fast.
-
-**With GetIt:**
-
-When the app starts, `diSetup()` fills the cupboard:
+**The contract (in Domain):**
 
 ```dart
+// lib/features/sign_up/domain/repositories/sign_up_repository.dart
+
+abstract class SignUpRepository {
+  Future<AuthResponseEntity> signUp({
+    required String name,
+    required String email,
+    required String password,
+  });
+}
+```
+
+This says: "Whoever implements me MUST provide a `signUp()` function." It makes a **promise** without making a commitment about *how* it works.
+
+**The fulfillment (in Data):**
+
+```dart
+// lib/features/sign_up/data/repositories/sign_up_repository_impl.dart
+
+class SignUpRepositoryImpl implements SignUpRepository {
+  final SignUpRemoteDataSource _remoteDataSource;
+
+  SignUpRepositoryImpl(this._remoteDataSource);
+
+  @override
+  Future<AuthResponseEntity> signUp({...}) {
+    return _remoteDataSource.signUp(name: name, email: email, password: password);
+  }
+}
+```
+
+This fulfills the promise. Now if tomorrow you add offline caching, or switch from Dio to http, you only change the implementation — not the contract.
+
+---
+
+## 7. What is a UseCase?
+
+**What:** A UseCase is **one specific action** your app can perform. Nothing more, nothing less.
+
+**Why:** A controller can get complicated. If you put all your business logic in the controller, it becomes a god object that does everything. A UseCase gives each action a home — one file, one job.
+
+Think of it like a **button in a factory**: one button starts the conveyor belt. Another button turns on the lights. Each button does exactly one thing. You can press any button independently.
+
+**Example from this project:**
+
+```dart
+// lib/features/sign_up/domain/usecases/sign_up_usecase.dart
+
+class SignUpUseCase {
+  final SignUpRepository _repository;
+
+  SignUpUseCase(this._repository);
+
+  Future<AuthResponseEntity> execute({
+    required String name,
+    required String email,
+    required String password,
+  }) {
+    return _repository.signUp(name: name, email: email, password: password);
+  }
+}
+```
+
+It has one job: take credentials, ask the repository to sign up, return the result.
+
+**The philosophical point:** A UseCase is where the domain layer expresses its intent. It says: "The app CAN sign up." Not how. Not where the data goes. Just: this is a thing the app knows how to do.
+
+---
+
+## 8. What is a Model?
+
+**What:** A Model is an **Entity that can also read JSON**.
+
+**Why:** The domain layer must stay pure. It cannot know about JSON. But the data layer needs to turn server responses into Dart objects. The Model is the bridge.
+
+Think of it like a **translator**. The server speaks JSON. Your app speaks Dart. The model translates between them.
+
+The key design point: **the Model extends the Entity**. So once it is created, the rest of the app treats it like an Entity — it never needs to know a Model exists.
+
+```dart
+// lib/features/sign_up/data/models/auth_response_model.dart
+
+class AuthResponseModel extends AuthResponseEntity {
+  const AuthResponseModel({
+    required super.accessToken,
+    required super.refreshToken,
+    required super.user,
+  });
+
+  factory AuthResponseModel.fromJson(Map<String, dynamic> json) {
+    return AuthResponseModel(
+      accessToken: json['access_token'] as String? ?? '',
+      refreshToken: json['refresh_token'] as String? ?? '',
+      user: SignedUpUserModel.fromJson(json['user'] as Map<String, dynamic>),
+    );
+  }
+}
+```
+
+`AuthResponseModel` IS an `AuthResponseEntity` (it extends it). So the controller receives it as an `AuthResponseEntity` and never knows or cares that it was once JSON from a server.
+
+---
+
+## 9. What is a DataSource?
+
+**What:** A DataSource is the code that **actually touches the outside world** — the internet, local storage, or a file.
+
+**Why:** You want to contain the "danger zone" in one place. Making HTTP requests can fail. Servers can be down. JSON can be malformed. By isolating all of that in the DataSource, the rest of your code stays clean and predictable.
+
+Think of it like a **dock worker at a port**. Ships come in with cargo from all over the world. The dock worker handles the messy, unpredictable part — unloading, inspecting, sometimes refusing goods. The factory inside only receives clean, checked items.
+
+```dart
+// lib/features/sign_up/data/datasources/sign_up_remote_datasource.dart
+
+class SignUpRemoteDataSourceImpl implements SignUpRemoteDataSource {
+  final Dio _dio;
+
+  @override
+  Future<AuthResponseModel> signUp({...}) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.signUp,
+        data: {'name': name, 'email': email, 'password': password},
+      );
+
+      final apiResponse = ApiResponse.fromJson(response.data);
+
+      if (!apiResponse.success) {
+        throw ServerException(message: apiResponse.error ?? 'Sign up failed');
+      }
+
+      return AuthResponseModel.fromJson(apiResponse.data);
+
+    } on DioException catch (e) {
+      throw ServerException(message: 'Sign up failed');
+    }
+  }
+}
+```
+
+The DataSource:
+- Talks to the internet (using Dio)
+- Parses the raw response
+- Throws a typed exception if something goes wrong
+- Returns a clean Model if it succeeds
+
+Everything above the DataSource never deals with raw JSON or DioExceptions.
+
+---
+
+## 10. What is a Controller?
+
+**What:** A Controller is the **middleman between the UI and the domain**. It holds state (like "is loading"), handles user actions, and updates the screen.
+
+**Why:** You do not want logic in your widgets. If you put logic in widgets, you cannot test it, you cannot reuse it, and you cannot reason about it clearly. The controller is where *"what should happen when the user taps this button"* lives.
+
+**Example from this project:**
+
+```dart
+// lib/features/sign_up/presentation/controllers/sign_up_controller.dart
+
+class SignUpController extends GetxController {
+  final SignUpUseCase _signUpUseCase;  // given to it — doesn't create it
+
+  final isLoading = false.obs;  // reactive state
+
+  Future<void> signUp() async {
+    // 1. Validate the inputs
+    if (name.isEmpty || email.isEmpty || password.isEmpty) { ... return; }
+    if (password != confirmPassword) { ... return; }
+    if (password.length < 6) { ... return; }
+
+    // 2. Call the use case
+    isLoading.value = true;
+    final result = await _signUpUseCase.execute(name, email, password);
+
+    // 3. Save the result and navigate
+    await appData.write(kKeyAccessToken, result.accessToken);
+    Get.offAllNamed(Routes.home);
+
+    isLoading.value = false;
+  }
+}
+```
+
+Notice the controller does **not** create the UseCase. It does not know how the UseCase works. It just says: "I need a UseCase. Give me one." That is dependency injection — explained next.
+
+---
+
+## 11. What is Dependency Injection?
+
+**What:** Dependency Injection means: instead of a class creating the things it needs, **someone else creates them and passes them in**.
+
+**Why — the philosophical reason:**
+
+If a class creates its own dependencies, it is responsible for knowing *how* to build them. This creates hidden coupling. The class becomes hard to test and hard to change.
+
+Real-life analogy: Imagine a chef who also has to grow his own vegetables, raise his own animals, mill his own flour, and build his own kitchen equipment — before he can cook. That is absurd. A chef should cook. Someone else handles supply.
+
+Without DI (bad):
+```dart
+class SignUpController {
+  // Creates everything itself — knows too much
+  final _useCase = SignUpUseCase(
+    SignUpRepositoryImpl(
+      SignUpRemoteDataSourceImpl(Dio())
+    )
+  );
+}
+```
+
+With DI (clean):
+```dart
+class SignUpController {
+  final SignUpUseCase _signUpUseCase;
+
+  // Receives it. Doesn't know how it was built.
+  SignUpController(this._signUpUseCase);
+}
+```
+
+**GetIt is the "cupboard" that holds everything pre-built:**
+
+```dart
+// lib/core/di/injection_container.dart
+
 locator.registerSingleton<Dio>(DioClient.instance);
 
 locator.registerSingleton<SignUpRemoteDataSource>(
-  SignUpRemoteDataSourceImpl(locator<Dio>()),   // gets Dio from the cupboard
+  SignUpRemoteDataSourceImpl(locator<Dio>()),
 );
 
 locator.registerSingleton<SignUpRepository>(
@@ -366,289 +414,253 @@ locator.registerSingleton<SignUpUseCase>(
 );
 ```
 
-Later, `SignUpBinding` fetches from the cupboard to create the controller:
+This runs once at startup. Now anything in the app can ask GetIt: "Give me a `SignUpUseCase`" — and GetIt hands it back, fully built, without anyone needing to know the recipe.
+
+---
+
+## 12. The Full Sign Up Flow — seeing it all together
+
+When you tap "Sign Up", here is the exact path through the layers:
+
+```
+USER TAPS THE BUTTON
+        │
+        ▼
+[PRESENTATION] sign_up_page.dart
+  → calls controller.signUp()
+        │
+        ▼
+[PRESENTATION] sign_up_controller.dart
+  → validates fields (name, email, password length, password match)
+  → sets isLoading = true (spinner appears on button)
+  → calls _signUpUseCase.execute(name, email, password)
+        │
+        ▼
+[DOMAIN] sign_up_usecase.dart
+  → calls _repository.signUp(name, email, password)
+        │
+        ▼
+[DATA] sign_up_repository_impl.dart
+  → calls _remoteDataSource.signUp(name, email, password)
+        │
+        ▼
+[DATA] sign_up_remote_datasource.dart   ← INTERNET HAPPENS HERE
+  → Dio fires HTTP POST to http://localhost:8080/api/v1/auth/register
+  → Body: { "name": "John", "email": "john@example.com", "password": "abc123" }
+        │
+        ▼  Server responds:
+  {
+    "success": true,
+    "data": {
+      "access_token": "eyJhbGci...",
+      "refresh_token": "eyJhbGci...",
+      "user": { "id": "...", "name": "John", "email": "...", "role": "customer" }
+    }
+  }
+        │
+  → Parses into AuthResponseModel (which IS an AuthResponseEntity)
+  → Returns it up the chain
+        │
+        ▼  bubbles back up through each layer
+        │
+[PRESENTATION] sign_up_controller.dart receives AuthResponseEntity
+  → Saves tokens to phone storage (GetStorage)
+  → Sets isLoading = false
+  → Navigates to Home screen
+```
+
+### What if something goes wrong?
+
+The error is thrown at the DataSource (the closest to the internet) and caught at the Controller (the closest to the user).
+
+```
+DataSource throws ServerException("email already registered")
+    ↑
+Repository does not catch it, just passes it up
+    ↑
+UseCase does not catch it, just passes it up
+    ↑
+Controller catches it:
+  Get.snackbar('Error', 'email already registered')
+```
+
+Each layer in the middle does **not** handle the error. It does not need to. Its job is only to pass the request down and the response up.
+
+---
+
+## 13. What is Dio?
+
+**What:** Dio is a Dart package that handles HTTP requests — talking to the internet.
+
+Think of Dio as a **postal service**. You give it: an address (URL), a method (POST/GET), and a package (request body). It delivers it and brings back whatever the server replies.
+
+### The ApiInterceptor — a customs officer
+
+Every request and response passes through `ApiInterceptor`. It runs automatically, for every single request, without you needing to call it.
+
+```
+Your App
+    │
+    ▼
+ApiInterceptor (outgoing)
+    │  → Adds: "Authorization: Bearer eyJhbGci..." (your login token)
+    │  → Logs:  REQUEST[POST] => /auth/register
+    ▼
+       INTERNET
+    ▼
+ApiInterceptor (incoming)
+    │  → Logs:  RESPONSE[201] => /auth/register
+    ▼
+Your DataSource receives the response
+```
+
+You write the auth-header logic **once**. Every request gets it. This is the interceptor pattern.
+
+### HTTP Methods — what they mean
+
+| Method | Meaning | Analogy |
+|--------|---------|---------|
+| `GET` | Fetch data, change nothing | Reading a notice board |
+| `POST` | Send data, create something new | Submitting a form |
+| `PUT` | Replace existing data completely | Overwriting a document |
+| `PATCH` | Update part of existing data | Correcting one line in a document |
+| `DELETE` | Remove something | Shredding a document |
+
+### What is a JWT Token?
+
+After you sign up or sign in, the server gives you a string called a **JWT token** (it looks like `eyJhbGci...`).
+
+Think of it like a **concert wristband**. You prove you paid once, get the wristband, and use it to re-enter without paying again. You send this token with every future request. The server checks it and knows who you are.
+
+---
+
+## 14. What is GetX?
+
+GetX handles three things in this project:
+
+### (a) Reactive State — the UI watches values and redraws itself
 
 ```dart
-Get.lazyPut(() => SignUpController(locator<SignUpUseCase>()));
+final isLoading = false.obs;  // .obs means "watch this"
 ```
 
-The controller just says: *"give me a SignUpUseCase"* — it doesn't know or care how it was made.
-
-### registerSingleton vs lazyPut
-
-| Method | When it's created | How many instances |
-|---|---|---|
-| `registerSingleton` | At app startup | Only one, forever |
-| `lazyPut` | First time it's needed | One per screen lifecycle |
-
----
-
-## 9. What is GetStorage?
-
-GetStorage is **permanent memory** on the phone. Normal Dart variables disappear when the app closes. GetStorage saves things to a file so they survive app restarts.
+When you change it:
 
 ```dart
-// Saving (after successful signup)
-await appData.write('access_token', result.accessToken);
-await appData.write('user_name',    result.user.name);
-
-// Reading (when app starts in loading_screen.dart)
-final isLoggedIn = appData.read('access_token') != null;
-
-// Checking (before writing a default value)
-appData.writeIfNull('first', true);   // only writes if key doesn't exist yet
+isLoading.value = true;
 ```
 
-**Why is this important?**
+Every `Obx(() => ...)` widget that reads this value **automatically redraws**. You never call `setState()`. You never manually trigger a rebuild.
 
-When you open the app again tomorrow, `loading_screen.dart` checks:
-- Is there a saved `access_token`? → Yes → skip login, go straight to Home
-- No token? → Show the Home/SignUp screen
-
----
-
-## 10. The complete picture
-
+```dart
+// In sign_up_page.dart
+Obx(() => ElevatedButton(
+  onPressed: controller.isLoading.value ? null : controller.signUp,
+  child: controller.isLoading.value
+      ? CircularProgressIndicator()
+      : Text('Sign Up'),
+))
 ```
-┌───────────────────────────────────────────────────────────────────┐
-│                            PHONE                                  │
-│                                                                   │
-│  ┌────────────────────────────────────────────────────────────┐   │
-│  │                    FLUTTER UI (GetX)                       │   │
-│  │                                                            │   │
-│  │   SignUpPage ◄──Obx──► SignUpController                    │   │
-│  │   (widgets)            (state + logic)                     │   │
-│  └──────────────────────────┬─────────────────────────────────┘   │
-│                             │ calls execute()                     │
-│  ┌──────────────────────────▼─────────────────────────────────┐   │
-│  │                    DOMAIN LAYER                             │   │
-│  │                                                            │   │
-│  │   SignUpUseCase ──► SignUpRepository (abstract contract)   │   │
-│  └──────────────────────────┬─────────────────────────────────┘   │
-│                             │ implemented by                      │
-│  ┌──────────────────────────▼─────────────────────────────────┐   │
-│  │                     DATA LAYER                              │   │
-│  │                                                            │   │
-│  │   SignUpRepositoryImpl ──► SignUpRemoteDataSource          │   │
-│  │                                    │                       │   │
-│  │                                   Dio + ApiInterceptor     │   │
-│  └────────────────────────────────────┼────────────────────────┘   │
-│                                       │                           │
-│   ┌───────────────────────────┐       │ HTTP POST                 │
-│   │  GetStorage (phone disk)  │       │                           │
-│   │  access_token: "eyJ..."   │       │                           │
-│   │  user_name: "John"        │       │                           │
-│   └───────────────────────────┘       │                           │
-└───────────────────────────────────────┼───────────────────────────┘
-                                        │
-                           ─────────────▼──────────────
-                           POST /api/v1/auth/register
-                           body: { name, email, password }
-                           ─────────────────────────────
-                                        │
-                                        ▼
-                          ┌─────────────────────────┐
-                          │   Go Server (port 8080)  │
-                          │                         │
-                          │  1. Validate input       │
-                          │  2. Hash password        │
-                          │  3. Save to PostgreSQL   │
-                          │  4. Generate JWT tokens  │
-                          │  5. Return tokens + user │
-                          └─────────────────────────┘
+
+### (b) Navigation
+
+```dart
+Get.toNamed(Routes.signUp);       // Go to a screen
+Get.back();                       // Go back
+Get.offAllNamed(Routes.home);     // Go to home and clear history
+```
+
+### (c) GetView — automatic controller access
+
+```dart
+class SignUpPage extends GetView<SignUpController> {
+  // `controller` is automatically available — no manual lookup
+}
 ```
 
 ---
 
-## 11. Project folder structure
+## 15. Project Folder Structure
 
 ```
 lib/
-├── core/                          # Shared infrastructure (used by all features)
+├── core/                               # Shared across all features
 │   ├── constants/
-│   │   ├── api_constants.dart     # Base URL and endpoint paths
-│   │   └── app_constants.dart     # Storage key strings
+│   │   ├── api_constants.dart          # Base URL and API endpoints
+│   │   └── app_constants.dart          # Storage key strings
 │   ├── di/
-│   │   └── injection_container.dart  # GetIt setup — the "cupboard"
+│   │   └── injection_container.dart   # GetIt setup — the "cupboard"
 │   ├── errors/
-│   │   ├── exceptions.dart        # ServerException, NetworkException, etc.
-│   │   └── failures.dart          # Failure classes (for future use)
+│   │   ├── exceptions.dart            # ServerException, NetworkException
+│   │   └── failures.dart              # Failure types (future use)
 │   ├── network/
-│   │   ├── api_interceptor.dart   # Adds auth token, logs requests
-│   │   ├── api_response.dart      # Generic { success, data, error } wrapper
-│   │   └── dio_client.dart        # Creates the Dio instance with config
+│   │   ├── api_interceptor.dart       # Adds auth token, logs requests
+│   │   ├── api_response.dart          # Generic { success, data, error } wrapper
+│   │   └── dio_client.dart            # Configures the Dio instance
 │   ├── styles/
-│   │   └── text_styles.dart       # All app text styles in one place
+│   │   └── text_styles.dart           # All text styles in one place
 │   └── utils/
-│       ├── helper_methods.dart    # Device ID, system UI, exit dialog
-│       ├── logger_util.dart       # Pretty console logging
-│       ├── post_login.dart        # Actions to run after login (future)
-│       └── ui_helpers.dart        # Spacing widgets and padding constants
+│       ├── helper_methods.dart
+│       ├── logger_util.dart
+│       ├── post_login.dart
+│       └── ui_helpers.dart
 │
-├── features/                      # One folder per feature
+├── features/                          # One folder per feature
 │   │
-│   ├── counter/                   # Practice: counter with GetX
-│   │   ├── domain/entities/counter_entity.dart
-│   │   └── presentation/
-│   │       ├── bindings/counter_binding.dart
-│   │       ├── controllers/counter_controller.dart
-│   │       └── pages/counter_page.dart
-│   │
-│   ├── home/                      # The main menu screen
-│   │   ├── domain/entities/practice_card_entity.dart
-│   │   └── presentation/
-│   │       ├── bindings/home_binding.dart
-│   │       ├── controllers/home_controller.dart
-│   │       ├── pages/home_page.dart
-│   │       └── widgets/practice_card_widget.dart
-│   │
-│   ├── sign_in/                   # Sign in (UI ready, API stub)
+│   ├── sign_up/                       # Fully implemented with real API
 │   │   ├── data/
-│   │   │   ├── datasources/auth_remote_datasource.dart
-│   │   │   ├── models/user_model.dart
-│   │   │   └── repositories/auth_repository_impl.dart
+│   │   │   ├── datasources/sign_up_remote_datasource.dart   ← HTTP happens here
+│   │   │   ├── models/auth_response_model.dart              ← parses JSON
+│   │   │   └── repositories/sign_up_repository_impl.dart   ← fulfills contract
 │   │   ├── domain/
-│   │   │   ├── entities/user_entity.dart
-│   │   │   ├── repositories/auth_repository.dart
-│   │   │   └── usecases/sign_in_usecase.dart
+│   │   │   ├── entities/auth_response_entity.dart           ← pure Dart object
+│   │   │   ├── repositories/sign_up_repository.dart         ← abstract contract
+│   │   │   └── usecases/sign_up_usecase.dart                ← one action
 │   │   └── presentation/
-│   │       ├── bindings/sign_in_binding.dart
-│   │       ├── controllers/sign_in_controller.dart
-│   │       └── pages/sign_in_page.dart
+│   │       ├── bindings/sign_up_binding.dart                ← creates controller
+│   │       ├── controllers/sign_up_controller.dart          ← state + logic
+│   │       └── pages/sign_up_page.dart                      ← the screen
 │   │
-│   ├── sign_up/                   # Sign up — FULLY IMPLEMENTED with real API
-│   │   ├── data/
-│   │   │   ├── datasources/sign_up_remote_datasource.dart  ← Dio lives here
-│   │   │   ├── models/auth_response_model.dart             ← parses JSON
-│   │   │   └── repositories/sign_up_repository_impl.dart
-│   │   ├── domain/
-│   │   │   ├── entities/auth_response_entity.dart
-│   │   │   ├── repositories/sign_up_repository.dart        ← abstract contract
-│   │   │   └── usecases/sign_up_usecase.dart
-│   │   └── presentation/
-│   │       ├── bindings/sign_up_binding.dart
-│   │       ├── controllers/sign_up_controller.dart         ← validates + saves tokens
-│   │       └── pages/sign_up_page.dart
-│   │
-│   └── welcome/                   # Static welcome screen
-│       └── presentation/pages/welcome_page.dart
-│
-├── gen/                           # Auto-generated (don't edit manually)
-│   ├── assets.gen.dart            # Type-safe asset paths
-│   ├── colors.gen.dart            # Type-safe color constants
-│   └── fonts.gen.dart             # Font family constants
-│
-├── localization/                  # English + Korean translations
-│   ├── language_files/
-│   └── presentation/
+│   ├── sign_in/                       # Same structure as sign_up
+│   ├── home/                          # Home screen with practice cards
+│   ├── counter/                       # GetX counter example
+│   └── welcome/                       # Static welcome screen
 │
 ├── routes/
-│   └── routes.dart                # All screen routes + transitions
+│   └── routes.dart                    # All named routes
 │
-├── shared/                        # Reusable across features
-│   ├── constants/app_list.dart    # The list of items shown on the home screen
-│   └── widgets/
-│       ├── custom_button.dart
-│       └── custom_elevated_button.dart
+├── shared/
+│   ├── constants/app_list.dart
+│   └── widgets/                       # Reusable widgets
 │
-├── bindings/
-│   └── controllers_binding.dart   # Initial app-level binding
-├── loading_screen.dart            # Checks login state at startup
-└── main.dart                      # App entry point
+├── bindings/controllers_binding.dart
+├── loading_screen.dart                # Checks login state at startup
+└── main.dart
 ```
 
 ---
 
-## 12. API Reference
+## 16. Quick Concept Summary
 
-The backend is a **Go server** running locally on port `8080`.
-
-### Base URL
-
-```
-http://localhost:8080/api/v1
-```
-
-> **Android emulator users:** replace `localhost` with `10.0.2.2`
-
-### Sign Up
-
-```
-POST /auth/register
-```
-
-**Request body:**
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "secret123"
-}
-```
-
-**Success response (201):**
-```json
-{
-  "success": true,
-  "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIs...",
-    "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
-    "user": {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "email": "john@example.com",
-      "name": "John Doe",
-      "role": "customer",
-      "created_at": "2026-05-12T10:00:00Z",
-      "updated_at": "2026-05-12T10:00:00Z"
-    }
-  }
-}
-```
-
-**Error response:**
-```json
-{
-  "success": false,
-  "error": "email already registered"
-}
-```
-
-| Status | Meaning |
-|---|---|
-| `201` | Account created successfully |
-| `400` | Missing fields or password too short |
-| `409` | Email already registered |
-| `500` | Server error |
-
-### Validation rules (enforced client-side too)
-
-- All fields (name, email, password) are required
-- Passwords must match
-- Password must be at least 6 characters
-
----
-
-## 13. Quick concept summary
-
-| Concept | What it is in plain English |
-|---|---|
-| **Widget** | A piece of the screen (button, text, image, empty space) |
-| **Clean Architecture** | Separating code into layers so each part has exactly one job |
-| **Entity** | A pure Dart object describing a concept — no JSON, no HTTP |
-| **UseCase** | One action the app can do (sign up, sign in, fetch products) |
-| **Repository (abstract)** | A contract/promise: "I will provide this function" |
-| **Repository (impl)** | The code that actually fulfills that promise |
-| **DataSource** | Code that talks to the internet or local database |
-| **Model** | An entity that can also read/write JSON |
-| **Dio** | The library that makes HTTP requests (like a courier service) |
-| **ApiInterceptor** | A guard that checks every request/response (adds token, logs) |
+| Concept | Plain English |
+|---------|---------------|
+| **Clean Architecture** | Separate your code into layers — each layer has one job and never mixes with others |
+| **Entity** | A pure Dart object. Describes a concept (User, Order). No JSON, no HTTP |
+| **Repository (abstract)** | A contract. A promise: "I will provide this function." Doesn't say how |
+| **Repository (impl)** | The code that fulfills the contract. Lives in the Data layer |
+| **UseCase** | One action the app can perform. One file, one job |
+| **Model** | An Entity that can also read JSON. Extends the Entity |
+| **DataSource** | The code that actually touches the internet or local storage |
+| **Controller** | Holds UI state, handles user actions, calls the UseCase |
+| **Binding** | Creates the controller when a screen opens |
+| **GetIt** | A global cupboard that stores pre-built objects (dependency injection) |
+| **Singleton** | One instance, created once, reused everywhere |
+| **Dio** | The library that makes HTTP requests |
+| **ApiInterceptor** | Runs on every request/response — adds auth headers, logs |
 | **JWT Token** | A string the server gives you to prove who you are |
 | **GetX** | Handles reactive state, navigation, and controller wiring |
-| **Obx** | A widget that auto-redraws when an `.obs` value changes |
-| **GetView** | A base class that auto-provides your controller |
-| **Binding** | A factory that creates a controller when a screen opens |
-| **GetIt** | A cupboard that stores and provides shared objects |
-| **Singleton** | One instance created once and reused forever |
-| **GetStorage** | Permanent memory on the phone (survives app restarts) |
-| **`POST`** | HTTP method meaning "create something new" |
-| **`GET`** | HTTP method meaning "fetch something, change nothing" |
+| **`.obs`** | Makes a value "watchable" — UI auto-redraws when it changes |
+| **`Obx`** | A widget that auto-redraws when an `.obs` value changes |
+| **GetStorage** | Permanent memory on the phone — survives app restarts |
+| **`POST`** | HTTP: "create something new" |
+| **`GET`** | HTTP: "fetch something, change nothing" |
